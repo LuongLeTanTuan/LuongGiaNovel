@@ -182,7 +182,7 @@ function handleRouting() {
 // API Calls
 async function fetchCategories() {
   try {
-    const res = await fetch('/api/categories');
+    const res = await fetch(`/api/categories?_t=${Date.now()}`, { cache: 'no-store' });
     const json = await res.json();
     if (json.success) {
       state.categories = json.data;
@@ -193,40 +193,27 @@ async function fetchCategories() {
   }
 }
 
-async function loadStories(forceRefresh = false) {
-  // 1. Phục vụ tức thì từ Client Cache (0ms) nếu không lọc/tìm kiếm
-  const isDefault = !state.selectedCategory && !state.searchQuery;
-  if (isDefault && !forceRefresh) {
-    try {
-      const cached = sessionStorage.getItem('lgn_cached_stories');
-      if (cached) {
-        const cachedStories = JSON.parse(cached);
-        if (Array.isArray(cachedStories) && cachedStories.length > 0) {
-          state.stories = cachedStories;
-          renderStoryGrid();
-        }
-      }
-    } catch (e) {}
-  }
-
-  // 2. Fetch dữ liệu mới nhất từ server trong nền (Stale-While-Revalidate)
+async function loadStories() {
   try {
     const params = new URLSearchParams();
     if (state.selectedCategory) params.append('category', state.selectedCategory);
     if (state.searchQuery) params.append('search', state.searchQuery);
+    params.append('_t', Date.now());
 
-    const res = await fetch(`/api/stories?${params.toString()}`);
+    const res = await fetch(`/api/stories?${params.toString()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     const json = await res.json();
     if (json.success && Array.isArray(json.data)) {
       state.stories = json.data;
-      if (isDefault) {
-        sessionStorage.setItem('lgn_cached_stories', JSON.stringify(json.data));
-      }
       renderStoryGrid();
     }
   } catch (err) {
     console.warn('Lỗi tải truyện từ server:', err);
-    // Nếu mạng chậm nhưng đã có dữ liệu trong state -> giữ nguyên, không làm giật lag giao diện
     if (!state.stories || state.stories.length === 0) {
       renderStoryGrid();
     }
@@ -1110,6 +1097,7 @@ async function submitNewStory(e) {
     if (json.success) {
       closeModal('story-modal');
       alert(json.message || 'Tạo truyện mới thành công!');
+      await loadStories();
       navigateTo('detail', { slug: json.slug });
     } else {
       alert('Lỗi: ' + json.message);
@@ -1180,6 +1168,7 @@ async function submitNewChapter(e, storyId) {
     if (json.success) {
       alert(json.message || 'Thêm chương mới thành công!');
       closeModal('chapter-modal');
+      await loadStories();
       renderStoryDetail(state.currentStory.slug);
     } else {
       alert('Lỗi: ' + json.message);

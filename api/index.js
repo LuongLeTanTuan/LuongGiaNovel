@@ -30,24 +30,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Chống cache toàn diện: đảm bảo mọi thiết bị luôn nhận dữ liệu thời gian thực từ Supabase
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Helper function to create URL slug from Vietnamese string
 const createSlug = db.createSlug;
-
-// In-memory cache for ultra-fast reading performance
-const memoryCache = {
-  stories: null,
-  storiesTimestamp: 0,
-  categories: null,
-  categoriesTimestamp: 0,
-  CACHE_TTL: 15 * 1000 // 15 seconds cache TTL
-};
-
-function clearCache() {
-  memoryCache.stories = null;
-  memoryCache.storiesTimestamp = 0;
-  memoryCache.categories = null;
-  memoryCache.categoriesTimestamp = 0;
-}
+function clearCache() {}
 
 // Authentication & Role-Based Access Control (RBAC)
 function authenticateToken(req, res, next) {
@@ -225,11 +219,6 @@ app.get('/api/auth/me', (req, res) => {
 // Categories (Có cache in-memory)
 app.get('/api/categories', async (req, res) => {
   try {
-    const now = Date.now();
-    if (memoryCache.categories && (now - memoryCache.categoriesTimestamp < 60000)) {
-      return res.json({ success: true, data: memoryCache.categories });
-    }
-
     let categories = null;
     if (supabaseService.isAvailable()) {
       try {
@@ -243,9 +232,6 @@ app.get('/api/categories', async (req, res) => {
       categories = db.prepare('SELECT * FROM categories ORDER BY id ASC').all();
     }
 
-    memoryCache.categories = categories;
-    memoryCache.categoriesTimestamp = now;
-
     res.json({ success: true, data: categories });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -257,17 +243,11 @@ app.get('/api/stories', async (req, res) => {
   try {
     const { category, status, search, sort, limit = 20, page = 1 } = req.query;
 
-    const isDefaultQuery = !category && !status && !search && (!sort || sort === 'latest') && page == 1;
-    const now = Date.now();
-    if (isDefaultQuery && memoryCache.stories && (now - memoryCache.storiesTimestamp < memoryCache.CACHE_TTL)) {
-      return res.json({ success: true, data: memoryCache.stories });
-    }
-
     let stories = null;
     if (supabaseService.isAvailable()) {
       try {
         stories = await supabaseService.getStories({ category, status, search, sort, limit, page });
-        // Nếu Supabase trả về rỗng trong lần tải đầu tiên, kiểm tra seed tự động
+        const isDefaultQuery = !category && !status && !search && (!sort || sort === 'latest') && page == 1;
         if (stories.length === 0 && isDefaultQuery) {
           const snapshotData = require('../data/stories_data.json');
           await supabaseService.seedInitialDataIfNeeded(snapshotData);
