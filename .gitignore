@@ -9,3 +9,6 @@ Thumbs.db
 .vercel
 *tuancute*.json
 service-account*.json
+
+.vercel
+.env*

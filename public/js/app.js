@@ -150,17 +150,25 @@ function renderAuthHeader() {
 
 
 // Router
-function navigateTo(view, params = {}) {
+function navigateTo(view, params = {}, push = true) {
   state.currentView = view;
 
+  let targetUrl = '/';
+  if (view === 'detail') {
+    targetUrl = `/truyen/${params.slug}`;
+  } else if (view === 'reader') {
+    targetUrl = `/truyen/${params.storySlug}/${params.chapterSlug}`;
+  }
+
+  if (push && window.location.pathname !== targetUrl) {
+    window.history.pushState({ view, params }, '', targetUrl);
+  }
+
   if (view === 'home') {
-    window.history.pushState({}, '', '/');
     renderHome();
   } else if (view === 'detail') {
-    window.history.pushState({}, '', `/truyen/${params.slug}`);
     renderStoryDetail(params.slug);
   } else if (view === 'reader') {
-    window.history.pushState({}, '', `/truyen/${params.storySlug}/${params.chapterSlug}`);
     renderReader(params.storySlug, params.chapterSlug);
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -171,15 +179,16 @@ function handleRouting() {
   const parts = path.split('/').filter(Boolean);
 
   if (parts.length === 0) {
-    navigateTo('home');
+    navigateTo('home', {}, false);
   } else if (parts[0] === 'truyen' && parts.length === 2) {
-    navigateTo('detail', { slug: parts[1] });
+    navigateTo('detail', { slug: parts[1] }, false);
   } else if (parts[0] === 'truyen' && parts.length === 3) {
-    navigateTo('reader', { storySlug: parts[1], chapterSlug: parts[2] });
+    navigateTo('reader', { storySlug: parts[1], chapterSlug: parts[2] }, false);
   } else {
-    navigateTo('home');
+    navigateTo('home', {}, false);
   }
 }
+
 
 // API Calls
 async function fetchCategories() {

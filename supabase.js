@@ -183,35 +183,38 @@ async function getStoryBySlug(slug) {
 
   if (!story) return null;
 
-  // Tăng lượt xem truyện
-  try {
-    await supabase
-      .from('stories')
-      .update({ views: (story.views || 0) + 1 })
-      .eq('id', story.id);
-    story.views = (story.views || 0) + 1;
-  } catch (e) {}
+  // Tăng lượt xem truyện ngầm (không chặn luồng trả dữ liệu về người dùng)
+  supabase
+    .from('stories')
+    .update({ views: (story.views || 0) + 1 })
+    .eq('id', story.id)
+    .then(() => {})
+    .catch(() => {});
 
-  // Lấy danh sách thể loại liên kết
-  const { data: scData } = await supabase
-    .from('story_categories')
-    .select('category_id, categories(*)')
-    .eq('story_id', story.id);
-  const categories = (scData || []).map(item => item.categories).filter(Boolean);
+  // Lấy song song (Parallel) danh sách thể loại liên kết và danh sách chương
+  const [scResult, chaptersResult] = await Promise.all([
+    supabase
+      .from('story_categories')
+      .select('category_id, categories(*)')
+      .eq('story_id', story.id),
+    supabase
+      .from('chapters')
+      .select('id, chapter_number, title, slug, word_count, views, created_at')
+      .eq('story_id', story.id)
+      .order('chapter_number', { ascending: true })
+  ]);
 
-  // Lấy danh sách chương (chỉ lấy thông tin vắn tắt, không lấy content)
-  const { data: chapters } = await supabase
-    .from('chapters')
-    .select('id, chapter_number, title, slug, word_count, views, created_at')
-    .eq('story_id', story.id)
-    .order('chapter_number', { ascending: true });
+  const categories = (scResult.data || []).map(item => item.categories).filter(Boolean);
+  const chapters = chaptersResult.data || [];
 
   return {
     ...story,
+    views: (story.views || 0) + 1,
     categories,
-    chapters: chapters || []
+    chapters
   };
 }
+
 
 /**
  * Lấy nội dung chương truyện kèm chương trước / chương sau
@@ -236,43 +239,51 @@ async function getChapter(storySlug, chapterSlug) {
 
   if (!chapter) return null;
 
-  // Tăng lượt xem
-  try {
-    await supabase.from('chapters').update({ views: (chapter.views || 0) + 1 }).eq('id', chapter.id);
-    await supabase.from('stories').update({ views: (story.views || 0) + 1 }).eq('id', story.id);
-    chapter.views = (chapter.views || 0) + 1;
-  } catch (e) {}
+  // Tăng lượt xem ngầm (không chặn phản hồi về người dùng)
+  Promise.all([
+    supabase.from('chapters').update({ views: (chapter.views || 0) + 1 }).eq('id', chapter.id),
+    supabase.from('stories').update({ views: (story.views || 0) + 1 }).eq('id', story.id)
+  ]).catch(() => {});
 
-  const { data: prevList } = await supabase
-    .from('chapters')
-    .select('slug, chapter_number, title')
-    .eq('story_id', story.id)
-    .lt('chapter_number', chapter.chapter_number)
-    .order('chapter_number', { ascending: false })
-    .limit(1);
+  // Lấy song song: chương trước, chương sau và danh sách rút gọn các chương
+  const [prevRes, nextRes, allChaptersRes] = await Promise.all([
+    supabase
+      .from('chapters')
+      .select('slug, chapter_number, title')
+      .eq('story_id', story.id)
+      .lt('chapter_number', chapter.chapter_number)
+      .order('chapter_number', { ascending: false })
+      .limit(1),
+    supabase
+      .from('chapters')
+      .select('slug, chapter_number, title')
+      .eq('story_id', story.id)
+      .gt('chapter_number', chapter.chapter_number)
+      .order('chapter_number', { ascending: true })
+      .limit(1),
+    supabase
+      .from('chapters')
+      .select('chapter_number, title, slug')
+      .eq('story_id', story.id)
+      .order('chapter_number', { ascending: true })
+  ]);
 
-  const { data: nextList } = await supabase
-    .from('chapters')
-    .select('slug, chapter_number, title')
-    .eq('story_id', story.id)
-    .gt('chapter_number', chapter.chapter_number)
-    .order('chapter_number', { ascending: true })
-    .limit(1);
-
-  const { data: allChapters } = await supabase
-    .from('chapters')
-    .select('chapter_number, title, slug')
-    .eq('story_id', story.id)
-    .order('chapter_number', { ascending: true });
+  const prevList = prevRes.data;
+  const nextList = nextRes.data;
+  const allChapters = allChaptersRes.data;
 
   return {
     story,
-    chapter,
+    chapter: {
+      ...chapter,
+      views: (chapter.views || 0) + 1
+    },
     prevChapter: prevList && prevList.length > 0 ? prevList[0] : null,
     nextChapter: nextList && nextList.length > 0 ? nextList[0] : null,
     allChapters: allChapters || []
   };
 }
+
 
 /**
  * Tạo truyện mới trong Supabase
