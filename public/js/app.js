@@ -11,8 +11,10 @@ const state = {
   searchQuery: '',
   selectedCategory: '',
   token: localStorage.getItem('lgn_token') || null,
-  user: JSON.parse(localStorage.getItem('lgn_user') || 'null')
+  user: JSON.parse(localStorage.getItem('lgn_user') || 'null'),
+  chapterCache: new Map() // Instant reader cache & prefetch buffer
 };
+
 
 // SVG Icons Collection (100% lightweight pure SVG, no external fonts/heavy libraries)
 const ICONS = {
@@ -424,24 +426,49 @@ async function renderStoryDetail(slug) {
   }
 }
 
-// READER VIEW (CHẤT LƯỢNG NUNITO CHUẨN TRUYENEDIT)
+// READER VIEW (CHẤT LƯỢNG NUNITO CHUẨN TRUYENEDIT - TỐC ĐỘ SIÊU TỐC)
 async function renderReader(storySlug, chapterSlug) {
   const content = document.getElementById('app-content');
-  content.innerHTML = `<div style="text-align: center; padding: 80px; color: var(--gold-primary);">Đang tải chương truyện...</div>`;
+  const cacheKey = `${storySlug}/${chapterSlug}`;
 
-  try {
-    const res = await fetch(`/api/stories/${storySlug}/chapters/${chapterSlug}`);
-    const json = await res.json();
-    if (!json.success) {
-      content.innerHTML = `<div style="text-align: center; padding: 80px;">Chương truyện không tồn tại. <a href="javascript:navigateTo('detail', {slug:'${storySlug}'})" style="color:var(--gold-primary)">Quay lại</a></div>`;
+  let chapterData = state.chapterCache.get(cacheKey);
+  if (!chapterData) {
+    content.innerHTML = `<div style="text-align: center; padding: 80px; color: var(--gold-primary);"><div style="display:inline-block; margin-bottom:12px; animation:spin 1s linear infinite;">⏳</div><br>Đang tải chương truyện...</div>`;
+    try {
+      const res = await fetch(`/api/stories/${storySlug}/chapters/${chapterSlug}`);
+      const json = await res.json();
+      if (!json.success) {
+        content.innerHTML = `<div style="text-align: center; padding: 80px;">Chương truyện không tồn tại. <a href="javascript:navigateTo('detail', {slug:'${storySlug}'})" style="color:var(--gold-primary)">Quay lại</a></div>`;
+        return;
+      }
+      chapterData = json.data;
+      state.chapterCache.set(cacheKey, chapterData);
+    } catch (err) {
+      console.error(err);
+      content.innerHTML = `<div style="text-align: center; padding: 80px;">Lỗi tải nội dung. Vui lòng thử lại.</div>`;
       return;
     }
+  }
 
-    const { story, chapter, prevChapter, nextChapter, allChapters } = json.data;
+  try {
+    const { story, chapter, prevChapter, nextChapter, allChapters } = chapterData;
     state.currentStory = story;
     state.currentChapter = chapter;
 
+    // Tự động tải trước (Prefetch) ngầm chương tiếp theo vào bộ nhớ cache để độc giả bấm qua chương sau lập tức hiện ngay 0ms
+    if (nextChapter && !state.chapterCache.has(`${storySlug}/${nextChapter.slug}`)) {
+      fetch(`/api/stories/${storySlug}/chapters/${nextChapter.slug}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data) {
+            state.chapterCache.set(`${storySlug}/${nextChapter.slug}`, res.data);
+          }
+        })
+        .catch(() => {});
+    }
+
     const paragraphs = chapter.content.split(/\n\s*\n/).map(p => `<p>${p.trim()}</p>`).join('');
+
 
     content.innerHTML = `
       <div class="reader-wrapper">

@@ -208,7 +208,12 @@ function initDb() {
       FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE,
       UNIQUE(story_id, chapter_number)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_sq_stories_slug ON stories(slug);
+    CREATE INDEX IF NOT EXISTS idx_sq_chapters_story_id ON chapters(story_id);
+    CREATE INDEX IF NOT EXISTS idx_sq_chapters_slug ON chapters(story_id, slug);
   `);
+
 
   // Ensure Admin user exists with hashed password
   const checkAdmin = db.prepare('SELECT * FROM users WHERE username = ?').get('admin');

@@ -69,6 +69,19 @@ CREATE TABLE IF NOT EXISTS public.chapters (
 ALTER TABLE public.chapters ADD COLUMN IF NOT EXISTS audio_url TEXT;
 
 -- ==============================================
+-- 5.1. TỐI ƯU CHỈ MỤC INDEXES ĐỂ TĂNG TỐC ĐỘ TRUY VẤN
+-- ==============================================
+CREATE INDEX IF NOT EXISTS idx_stories_slug ON public.stories(slug);
+CREATE INDEX IF NOT EXISTS idx_stories_status ON public.stories(status);
+CREATE INDEX IF NOT EXISTS idx_stories_updated_at ON public.stories(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chapters_story_id ON public.chapters(story_id);
+CREATE INDEX IF NOT EXISTS idx_chapters_story_slug ON public.chapters(story_id, slug);
+CREATE INDEX IF NOT EXISTS idx_chapters_story_ch_num ON public.chapters(story_id, chapter_number);
+CREATE INDEX IF NOT EXISTS idx_story_categories_story_id ON public.story_categories(story_id);
+CREATE INDEX IF NOT EXISTS idx_story_categories_category_id ON public.story_categories(category_id);
+
+
+-- ==============================================
 -- 6. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================
 ALTER TABLE public.stories ENABLE ROW LEVEL SECURITY;
