@@ -307,11 +307,6 @@ app.get('/api/stories', async (req, res) => {
       }
     }
 
-    if (isDefaultQuery) {
-      memoryCache.stories = stories;
-      memoryCache.storiesTimestamp = now;
-    }
-
     res.json({ success: true, data: stories });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
