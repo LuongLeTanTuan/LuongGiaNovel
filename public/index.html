@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lương Gia Novel - Nền Tảng Đọc Truyện Chữ Thượng Lưu</title>
+  <meta name="description" content="Lương Gia Novel - Nền tảng đọc truyện chữ phong cách quý phái, tổng tài, đô thị hào môn, Zhihu edit với phông chữ chuẩn, chống mỏi mắt.">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+
+  <!-- Fonts: Nunito (Chính xác theo chuẩn truyenedit), Playfair Display (Luxury Serif), Lora (Reading Serif) - Full Vietnamese Subsets -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600;1,700&display=swap&subset=vietnamese" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <div class="header-wrapper">
+    <header class="navbar">
+      <!-- Luxury Brand Logo: LƯƠNG GIA NOVEL -->
+      <a href="javascript:void(0)" onclick="navigateTo('home')" class="brand-logo">
+        <img src="/assets/logo.svg" alt="Lương Gia Novel Logo">
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="nav-links">
+        <a href="javascript:void(0)" onclick="navigateTo('home'); selectCategory('')" class="nav-item active">Trang Chủ</a>
+        <a href="javascript:void(0)" onclick="selectCategory('ngon-tinh-tong-tai')" class="nav-item">Tổng Tài Hào Môn</a>
+        <a href="javascript:void(0)" onclick="selectCategory('truyen-zhihu-edit')" class="nav-item">Truyện Zhihu Edit</a>
+        <a href="javascript:void(0)" onclick="selectCategory('trong-sinh-bao-thu')" class="nav-item">Trọng Sinh</a>
+      </nav>
+
+      <!-- Search & Action -->
+      <div class="header-actions">
+        <div class="search-bar-wrap">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="header-search" class="search-input" placeholder="Tìm kiếm truyện, tác giả...">
+        </div>
+        <div id="auth-action-container">
+          <!-- Rendered by app.js: Either 'Đăng Nhập Admin' or 'Quản Trị / Đăng Truyện' -->
+        </div>
+        <button id="mobile-menu-btn" class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Mở menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer Navigation -->
+    <div id="mobile-drawer" class="mobile-drawer">
+      <div class="mobile-search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="mobile-search-input" class="search-input" placeholder="Tìm kiếm truyện, tác giả...">
+      </div>
+      <div class="mobile-nav-links">
+        <a href="javascript:void(0)" onclick="navigateTo('home'); selectCategory(''); closeMobileMenu();" class="mobile-nav-item">🏠 Trang Chủ</a>
+        <a href="javascript:void(0)" onclick="selectCategory('ngon-tinh-tong-tai'); closeMobileMenu();" class="mobile-nav-item">👑 Tổng Tài Hào Môn</a>
+        <a href="javascript:void(0)" onclick="selectCategory('truyen-zhihu-edit'); closeMobileMenu();" class="mobile-nav-item">📖 Truyện Zhihu Edit</a>
+        <a href="javascript:void(0)" onclick="selectCategory('trong-sinh-bao-thu'); closeMobileMenu();" class="mobile-nav-item">⚡ Trọng Sinh</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Dynamic SPA Content -->
+  <main class="main-container" id="app-content">
+    <!-- Rendered dynamically by app.js -->
+  </main>
+
+  <!-- Luxury Footer -->
+  <footer style="margin-top: 80px; border-top: 1px solid var(--border-gold-subtle); background: var(--bg-secondary); padding: 50px 20px 30px; position: relative; z-index: 10;">
+    <div style="max-width: 1300px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: gap; gap: 40px;">
+      <div style="max-width: 480px;">
+        <img src="/assets/logo.svg" alt="Lương Gia Novel" style="height: 48px; margin-bottom: 18px;">
+        <p style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.8;">
+          Lương Gia Novel là không gian đọc tiểu thuyết trực tuyến dành riêng cho những độc giả say mê những câu chuyện hào môn quý tộc, tình tiết gay cấn và chất lượng ngôn từ chau chuốt.
+        </p>
+      </div>
+      <div>
+        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--gold-light); margin-bottom: 14px;">Liên Hệ & Quản Trị</h4>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px;">Ban Biên Tập: luonggianovel@gmail.com</p>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">Hotline / Zalo: Lương Gia Audio & Novel Studio</p>
+      </div>
+    </div>
+    <div style="max-width: 1300px; margin: 30px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 0.82rem; color: var(--text-dim);">
+      Copyright © 2026 Lương Gia Novel. All rights reserved.
+    </div>
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
